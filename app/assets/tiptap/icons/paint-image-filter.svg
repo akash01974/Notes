@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0">
+  <defs>
+	<filter id="blackToWhite">
+       <!--把全透明部分变成具体某个颜色，RGB!=0即可,全透明本身是黑色-->
+        <feColorMatrix in="SourceGraphic" type="matrix"
+        values="0 0 0 0 0.2
+                0 0 0 0 0.3
+                0 0 0 0 0.5
+                0 0 0 -1 1" 
+        result="step1"/>
+		<feComposite in="step1" in2="SourceGraphic" operator="over" result="step2"/>
+		<!--把非黑色变成透明-->
+		<feColorMatrix in="step2" type="matrix"
+        values="0 0 0 0 1
+                0 0 0 0 1
+                0 0 0 0 1
+                -1 -1 -1 0 1" 
+        result="step3"/>
+		
+		<feComposite in="step4" in2="SourceGraphic" operator="over"/>
+    </filter>
+
+    <filter id="whiteToBlack">
+       <!--把全透明部分变成具体某个颜色，RGB!=0即可,全透明本身是黑色-->
+        <feColorMatrix in="SourceGraphic" type="matrix"
+        values="0 0 0 0 0.2
+                0 0 0 0 0.3
+                0 0 0 0 0.5
+                0 0 0 -1 1" 
+        result="step1"/>
+		
+		<feComposite in="step1" in2="SourceGraphic" operator="over" result="step2"/>
+		<!--把非白色色变成透明-->
+		<feColorMatrix in="step2" type="matrix"
+        values="0 0 0 0 0
+                0 0 0 0 0
+                0 0 0 0 0
+                1 1 1 0 -1.5"
+        result="step3"/>
+		
+		<feComposite in="step4" in2="SourceGraphic" operator="over"/>
+    </filter>
+  </defs>
+</svg>
