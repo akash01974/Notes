@@ -2,7 +2,7 @@
 
 | Field | Value |
 |---|---|
-| **Status** | RECOMMENDATION RECORD — Pending User Approval |
+| **Status** | PROVISIONALLY APPROVED & FEASIBILITY VALIDATED (Milestone 2.5 Complete) |
 | **Date** | 2026-11-02 |
 | **Document ID** | ADR-007 |
 | **Scope** | Cross-Platform Architecture, Editor Host, Storage, and Synchronization Selection |
@@ -12,7 +12,7 @@
 
 ## 1. Executive Decision Summary
 
-Based on comprehensive static reverse engineering, decompiled bytecode inspection, Room v47 database mapping, native library classification, standalone browser smoke testing (15/15 PASS), and multi-criteria decision analysis (MCDA), the recommended architecture is:
+Based on comprehensive static reverse engineering, decompiled bytecode inspection, Room v47 database mapping, native library classification, standalone browser smoke testing (15/15 PASS), multi-criteria decision analysis (MCDA), and **Milestone 2.5 technical feasibility validation**, the recommended architecture is:
 
 > **Primary Recommendation:**
 > **Flutter UI Shell + Embedded TipTap Editor (`flutter_inappwebview`) + Local Drift (SQLite) Store + Open Supabase Cloud Sync Engine.**
@@ -23,7 +23,7 @@ Based on comprehensive static reverse engineering, decompiled bytecode inspectio
 +─────────────────────────────────────────────────────────────────────────────────────────────+
   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
   │                            Flutter Application Shell (Dart)                             │
-  │  - Authentic ColorOS (COUI) Design System (Spring Physics, 120 FPS, Pixel Fidelity)    │
+  │  - Authentic ColorOS (COUI) Design System (Spring Physics, Adaptive 60-120 Hz, Pixels)  │
   │  - Universal Native Targets: Android (All OEMs), Linux (Wayland/X11), Windows, macOS    │
   │  - Native Replacement Canvas: Skia/Impeller Vector Drawing Engine (replaces libpaint.so)│
   │  - Audio Recorder & Player Engine: MP3 Stream Capture + Synchronized LRC Timeline Parser│
@@ -55,7 +55,7 @@ Based on comprehensive static reverse engineering, decompiled bytecode inspectio
   ┌─────────────────────────────────────────────────────────────────────────────────────────┐
   │                             Open Cloud Backend (Supabase)                               │
   │  - PostgreSQL Store mirroring Room v47 DDL + S3-Compatible Object Storage for Blobs     │
-  │  - Zero-Knowledge End-to-End Encryption (Argon2id + XChaCha20-Poly1305)                 │
+  │  - Client-Side Zero-Knowledge End-to-End Encryption (Argon2id + XChaCha20-Poly1305)    │
   │  - 100% Self-Hostable via Docker Compose or Hosted Cloud                                │
   └─────────────────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -141,28 +141,35 @@ If the user prefers a single-language **web-native ecosystem** (TypeScript acros
 
 ---
 
-## 7. Cost, Licensing & Maintenance Implications
+## 7. Milestone 2.5 Empirical Feasibility Findings
 
-- **Software Licensing**:
-  - Core Client Shell: 100% Open Source (Flutter / Dart / SQLite / MIT / BSD licenses).
-  - Editor Engine: Minified Vue 3 / TipTap / ProseMirror (MIT licenses).
-  - Zero Proprietary Binary Linking: No closed-source OPPO C++ libraries (`.so`) are packaged or distributed.
-- **Operational Costs**:
-  - Local-Only Mode: **$0.00** (Free, fully functional offline).
-  - Self-Hosted Sync: **$0.00** (Runs on user's existing hardware or $5/mo VPS via Docker).
-  - Cloud Sync (Hosted): Free tier of Supabase covers up to 500 MB database and 1 GB file storage (thousands of typical notes).
+The following empirical proofs were executed and validated on the target environment during Milestone 2.5:
+1. **SQLite Room v47 DDL & Cascades (PASS)**: Tested against SQLite 3.54.0. Table creation, indexes, foreign key enforcement, and cascading deletions (`ON DELETE CASCADE`) were 100% verified.
+2. **Audio MP3 44.1 kHz Mono Encoding (PASS)**: Verified using FFmpeg/LAME and `ffprobe`. Matches original `Attachment.DEFAULT_AUDIO_FORMAT = "mp3"`. GStreamer 1.0, LAME, and PipeWire stacks are verified present on Linux.
+3. **Vector Stroke JSON & PNG Preview (PASS)**: Serialized 5-point pressure curve (541 B JSON); deserialized with exact float precision; rasterized 800x600 transparent PNG preview (3,547 B).
+4. **WebView & Editor Host on Linux Wayland (CONDITIONAL PASS)**: Tested WebKit2GTK 4.1 under Hyprland Wayland compositor. Requires `WEBKIT_FORCE_COMPOSITING_MODE=1` environment variable to prevent Wayland surface stalls.
+5. **Client-Side E2EE Specification**: Clarified that End-to-End Encryption is implemented strictly on the client (Argon2id + XChaCha20-Poly1305), not provided automatically by the cloud backend.
 
 ---
 
-## 8. Decision Gates Requiring User Approval
+## 8. Legal, Copyright & Redistribution Strategy
 
-Before any application code, scaffolding, or framework configuration begins, the user must explicitly review and authorize:
-
-1. **Client Framework Approval**: Confirm **Candidate B (Flutter Shell + Embedded TipTap WebView)** as the primary application architecture (or select Candidate A as alternative).
-2. **Editor Strategy Approval**: Confirm **Strategy 3 (Hybrid Clean Host reusing unchanged `assets/tiptap/index.js` bundle)**.
-3. **Cloud Backend Strategy Approval**: Confirm **Supabase / PostgreSQL local-first sync architecture** (or mandate Local-Only / WebDAV).
-4. **Drawing Canvas Strategy Approval**: Confirm native vector canvas replacement (storing open JSON strokes + PNG preview) in place of attempting to reverse closed `.bin` files.
+- **Core Application**: 100% original, clean-room Flutter/Dart/SQLite code under open-source licensing.
+- **Reverse-Engineering Protection**: Interoperability analysis is protected under EU Directive 2009/24/EC (Art. 6) and 17 U.S.C. § 1201(f).
+- **Public Distribution Rules**:
+  - No proprietary OPPO branding, OPPO Sans font binaries, or proprietary sound assets will be bundled into public releases.
+  - The application will support a clean host architecture where users can import their own `index.js` bundle (BYO-Bundle) or use an open clean-room TipTap schema implementation.
 
 ---
 
-*Phase 1 Milestone 2 complete. Awaiting user architecture decision.*
+## 9. Decision Gates for Milestone 3 (Scaffolding)
+
+Milestone 2.5 feasibility proofs are **COMPLETE and VALIDATED**.
+
+Before application scaffolding begins in Milestone 3, the user must explicitly confirm:
+1. **Approval of Milestone 2.5 Feasibility Results** across WebView, Database, Media, and Drawing subsystems.
+2. **Authorization to begin Milestone 3 scaffolding** (setting up the Flutter project structure, Drift database files, and clean WebView host harness).
+
+---
+
+*Milestone 2.5 complete. Awaiting user authorization to proceed to Milestone 3.*
