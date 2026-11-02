@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--
+  STANDALONE SMOKE-TEST HARNESS — ColorOS Notes TipTap editor.
+
+  This is a SEPARATE harness document. The production files
+  (extracted/assets/tiptap/index.html and everything under its assets/)
+  are served byte-for-byte unchanged and are NOT edited by this harness.
+
+  Load order guarantees the mock host exists before the production module runs:
+    1. <base>       makes every relative URL resolve under /tiptap/ (path fidelity)
+    2. /vendor/...  the existing mock bridge (rea-tools/mock_bridge.js), served read-only
+    3. /smoke/...   bridge_host.js — capture layer wrapping the mock (callbacks, flags)
+    4. module       the PRODUCTION entry ./assets/index.js (unmodified Vue3+TipTap app)
+-->
+<head>
+  <meta charset="UTF-8">
+  <link rel="icon" href="data:,">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0">
+  <meta name="color-scheme" content="dark light">
+  <base href="/tiptap/">
+
+  <!-- Production stylesheet (relative to <base>, identical to original index.html) -->
+  <link rel="stylesheet" href="./assets/index.css">
+  <link rel="modulepreload" crossorigin href="./assets/@vue.js">
+  <link rel="modulepreload" crossorigin href="./assets/prosemirror-model.js">
+  <link rel="modulepreload" crossorigin href="./assets/prosemirror-transform.js">
+  <link rel="modulepreload" crossorigin href="./assets/prosemirror-state.js">
+  <link rel="modulepreload" crossorigin href="./assets/prosemirror-view.js">
+  <link rel="modulepreload" crossorigin href="./assets/@tiptap.js">
+  <link rel="modulepreload" crossorigin href="./assets/@zumer.js">
+  <link rel="modulepreload" crossorigin href="./assets/lottie-web.js">
+  <link rel="modulepreload" crossorigin href="./assets/html2canvas.js">
+
+  <!-- Host shim BEFORE production module (see load order above) -->
+  <script src="/vendor/mock_bridge.js"></script>
+  <script src="/smoke/bridge_host.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+  <!-- Production entry point, unmodified, resolved through <base> to /tiptap/assets/index.js -->
+  <script type="module" crossorigin src="./assets/index.js"></script>
+</body>
+</html>

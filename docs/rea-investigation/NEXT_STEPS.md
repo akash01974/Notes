@@ -1,23 +1,25 @@
 # NEXT STEPS — ColorOS Notes Replacement: Engineering Roadmap
 
 > **Document Status**: Final · Based on verified static analysis and reverse engineering findings  
-> **Last Updated**: 2026-10-31  
+> **Last Updated**: 2026-11-02  
 > **Confidence Level**: High (editor layer), Medium (native attachment features), Low (cloud sync internals)
 
 ## Investigation Status Correction
 
-The framework-specific proposal and broad portability claims in the pre-existing roadmap are not conclusions of this investigation. No framework is selected or recommended here. The editor bundle has not yet been executed in a desktop browser, its complete bridge contracts are not mapped, and REA reports partial/truncated semantic coverage. Use the evidence-based priorities below; treat later framework-specific material as an unapproved historical sketch, not a decision or implementation instruction.
+The framework-specific proposal and broad portability claims in the pre-existing roadmap are not conclusions of this investigation. No framework is selected or recommended here. The editor bundle's complete bridge contracts are not yet fully mapped, and REA reports partial/truncated semantic coverage. Use the evidence-based priorities below; treat later framework-specific material as an unapproved historical sketch, not a decision or implementation instruction.
+
+**Update 2026-11-02 — priority item 1 COMPLETE.** The unchanged production bundle now runs standalone in headless Chromium 156 (`helium-browser` + CDP, zero installs): **15/15 tests PASS** — startup, Vue/TipTap mount, blank-note init, typing, title (`onTitleChange`), bold/italic, headings (`multi-heading` + slash-menu bridge request), lists, table insert/cell-edit/add-row, undo/redo, JSON persistence, HTML/text extraction, reload+restore. Evidence, boot sequence and root-cause findings: `docs/rea-investigation/SMOKE_TEST_RESULTS.md`; harness: `apk-work/standalone-smoke-test/` (`node run_smoke.mjs`). Known gaps: **native slash-menu rendering still untested** (only the `showRichTextFormatMenu` bridge request was verified — the menu UI is native), and **two OPPO TBL-WebView-only `Selection.showHandles` console errors** are documented as native-required (caught by the bridge; style application still succeeds). The next engineering milestone is priority item 2 (bridge contract completion).
 
 ## Evidence-Based Priority Order
 
-1. **Standalone browser smoke test**: Serve the unchanged bundle over local HTTP with a separate host shim injected before `index.js`. Confirm startup, attachment of the editor, blank-note initialization, text edits, formatting, content JSON updates, HTML/text extraction, and console errors. Do not edit the production bundle.
+1. ~~**Standalone browser smoke test**~~ — ✅ **COMPLETE 2026-11-02 (15/15 PASS)**. Serve the unchanged bundle over local HTTP with a separate host shim injected before `index.js`. Confirmed: startup, attachment of the editor, blank-note initialization, text edits, formatting, content JSON updates, HTML/text extraction, and console errors (2 documented OPPO-specific `Selection.showHandles` errors; 0 network failures; native slash-menu rendering untested). Production bundle not edited. See `SMOKE_TEST_RESULTS.md`.
 2. **Bridge contract completion**: Validate all 188 Android-to-JS registrations and 107 `@JavascriptInterface` signatures against actual call sites, payload construction, callbacks, and host implementations. Separate active calls from exposed-but-unreferenced methods.
 3. **Content round-trip specification**: Capture representative `TiptapContentInfo`, TipTap JSON, HTML, and attachment outputs. Test legacy HTML migration and title/body serialization independently.
 4. **Attachment and paint pipelines**: Trace Android file/URI lifecycle, audio playback/recording, contact/calendar actions, image preprocessing, paint binary/protobuf storage, and undo integration. Define platform adapter boundaries before choosing host technology.
 5. **Dependency inventory completion**: Trace manifest permissions, intents, account/cloud SDK calls, dynamic URL-card network requests, and native library entry points. Confirm which are needed for editor-only operation versus the full Notes application.
 6. **Cross-platform architecture decision**: Make a framework and storage/backend decision only after the user approves a platform strategy and the browser proof-of-concept establishes which editor assets can be reused.
 
-**Do not proceed to a framework scaffold yet.** The next engineering milestone is item 1, a reversible browser-only execution proof with no production-bundle modification.
+**Do not proceed to a framework scaffold yet.** Priority item 1 (browser proof) is done; the next engineering milestone is item 2, bridge contract completion, followed by item 3, the content round-trip specification.
 
 ---
 
@@ -25,7 +27,7 @@ The framework-specific proposal and broad portability claims in the pre-existing
 
 The earlier executive summary below is preserved as historical context but was too confident. The current evidence-based status is:
 
-- The bundle contains Vue/TipTap/ProseMirror and is structurally browser-based; standalone execution has not yet been tested, and the original bridge/native host is required for several features.
+- The bundle contains Vue/TipTap/ProseMirror and is structurally browser-based; standalone execution is now **verified** (15/15 PASS in headless Chromium, 2026-11-02), and the original bridge/native host is still required for several features (slash-menu UI, selection handles, skin/font assets, IME).
 - Static extraction identified 188 Android→JS handler registrations and 107 Android `@JavascriptInterface` methods. Handler names are cataloged, but payload/callback contracts and native call-site coverage are incomplete.
 - The native content model carries TipTap JSON alongside legacy HTML and attachment metadata. Round-trip compatibility and migration behavior need targeted tests before claiming schema portability.
 - REA coverage is partial and the semantic graph is truncated; dynamic calls and ambiguous relations remain unresolved.
@@ -38,7 +40,7 @@ A faithful cross-platform replacement remains the project objective. Reuse of th
 
 | Layer | Confidence | Basis |
 |---|---|---|
-| Editor (TipTap JS bundle) | Medium | Source inspected; browser execution not tested |
+| Editor (TipTap JS bundle) | ✅ High | Source inspected; standalone browser execution verified 15/15 PASS (2026-11-02) |
 | Bridge protocol (WVJB) | Medium | Counts and names verified; many contracts/call sites remain unknown |
 | Content data model | Medium | TipTap JSON, legacy HTML, and attachment fields observed; round-trip untested |
 | Local database schema | ✅ High | Room v47 schema extracted, key fields verified |

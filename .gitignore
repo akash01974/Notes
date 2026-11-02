@@ -1,0 +1,5 @@
+# Original APK and reverse-engineered payload — never commit
+ColorOSNotes.apk
+apk-work/*
+!apk-work/standalone-smoke-test/
+apk-work/standalone-smoke-test/results/
