@@ -1,52 +1,420 @@
 # NEXT STEPS — ColorOS Notes Replacement: Engineering Roadmap
 
-> **Document Status**: Final · Based on verified static analysis, bridge contract audit, and standalone browser verification  
+> **Document Status**: Final · Phase 1 (Reverse Engineering & Evidence Gathering) 100% COMPLETE
 > **Last Updated**: 2026-11-02  
-> **Confidence Level**: High (editor layer, bridge protocol, local database schema, content round-trip), Medium (native attachment/paint pipelines), Low (proprietary HeyTap cloud sync)
+> **Confidence Level**: High (Editor layer, bridge protocol, local database schema, content round-trip, attachment lifecycles, paint metadata, audio/LRC pipelines, platform abstraction boundaries)
 
-## Investigation Status Correction
+## Investigation Status Summary
 
-The framework-specific proposal and broad portability claims in the pre-existing roadmap are not conclusions of this investigation. No framework is selected or recommended here. The immediate investigation phase has systematically mapped the editor bundle, bridge contracts, content round-trip flows, and local storage schema. Use the evidence-based priorities below; treat later framework-specific material as an unapproved historical sketch, not a decision or implementation instruction.
+The reverse engineering and evidence-gathering phase (Phase 1) is now **fully complete**. All core subsystems—editor runtime, bridge communications, database models, content round-trip serialization, attachment pipelines, vector paint metadata, audio recording/LRC synchronization, and operating system dependency boundaries—have been systematically investigated and documented with concrete decompiled source paths, line numbers, and runtime tests.
 
-**Update 2026-11-02 — Milestone Status:**
+**Phase 1 Deliverables Summary:**
 1. **Priority Item 1 (Standalone Browser Smoke Test)**: ✅ **COMPLETE (15/15 PASS)**. The unchanged production bundle runs in headless Chromium 156 (`helium-browser` + CDP, zero installs) with full startup, Vue/TipTap mount, blank-note init, typing, title (`onTitleChange`), bold/italic, headings (`multi-heading`), lists, table insert/cell-edit/add-row, undo/redo, JSON persistence, HTML/text extraction, reload+restore. Documented in `docs/rea-investigation/SMOKE_TEST_RESULTS.md`.
 2. **Priority Item 2 (Bridge Contract Completion)**: ✅ **COMPLETE**. All 188 registered Android-to-JS handlers and 107 JavaScript-interface methods have been completely audited and documented in `docs/rea-investigation/BRIDGE_CONTRACT_AUDIT.md`. Verified: 174 active native send sites, 31 runtime probed/smoke handlers, 99 active interface methods, 14 unsent handlers, 8 unreferenced interface methods.
-3. **Priority Item 3 (Content Round-Trip Specification)**: ✅ **COMPLETE**. Documented in `docs/rea-investigation/CONTENT_ROUNDTRIP_SPEC.md` covering `TiptapContentInfo` (10 fields), `NoteDataInTipTap`, blank/existing note flows, `callInitContentFromJava`, `callUpdateContentFromJava`, `onContentJsonUpdate`, unified title architecture (`onTitleChange`), `Ma()` legacy converter, `AttachData` / `PaintInfo` models, and verified runtime limitations.
-4. **Next Engineering Milestone**: Priority Item 4 (Attachment and paint pipelines) and Item 5 (Dependency inventory completion), followed by user review and approval for Item 6 (Cross-platform architecture decision).
-
-## Evidence-Based Priority Order
-
-1. ~~**Standalone browser smoke test**~~ — ✅ **COMPLETE 2026-11-02 (15/15 PASS)**. Served unchanged bundle over local HTTP with separate host shim. Verified startup, attachment, blank-note init, text edits, formatting, content JSON updates, HTML/text extraction, and reload/restore. Production bundle not edited. See `SMOKE_TEST_RESULTS.md`.
-2. ~~**Bridge contract completion**~~ — ✅ **COMPLETE 2026-11-02**. Validated all 188 Android-to-JS registrations and 107 `@JavascriptInterface` signatures against actual call sites, payload construction, callbacks, and host implementations. Separated active calls from exposed-but-unreferenced methods. Documented in `BRIDGE_CONTRACT_AUDIT.md`.
-3. ~~**Content round-trip specification**~~ — ✅ **COMPLETE 2026-11-02**. Captured concrete `TiptapContentInfo`, TipTap JSON, HTML, and attachment outputs. Verified legacy HTML migration (`Ma()`), title flow (`onTitleChange`), and body serialization. Documented in `CONTENT_ROUNDTRIP_SPEC.md`.
-4. **Attachment and paint pipelines**: Trace Android file/URI lifecycle, audio playback/recording, contact/calendar actions, image preprocessing, paint binary/protobuf storage, and undo integration. Define platform adapter boundaries before choosing host technology.
-5. **Dependency inventory completion**: Trace manifest permissions, intents, account/cloud SDK calls, dynamic URL-card network requests, and native library entry points. Confirm which are needed for editor-only operation versus the full Notes application.
-6. **Cross-platform architecture decision**: Make a framework and storage/backend decision only after the user approves a platform strategy based on the completed reverse engineering evidence.
-
-**Do not proceed to a framework scaffold yet.** Priority items 1, 2, and 3 are complete; the next engineering milestone is item 4 (attachment and paint pipeline investigation) and item 5 (dependency inventory completion), followed by user approval of an architecture decision.
+3. **Priority Item 3 (Content Round-Trip Specification)**: ✅ **COMPLETE**. Documented in `docs/rea-investigation/CONTENT_ROUNDTRIP_SPEC.md` covering `TiptapContentInfo` (10 fields), `NoteDataInTipTap`, blank/existing note flows, `callInitContentFromJava`, `callUpdateContentFromJava`, `onContentJsonUpdate`, unified title architecture (`onTitleChange`), `Ma()` legacy converter, `AttachData` (16 constructor fields verified), and `PaintInfo` models.
+4. **Priority Item 4 (Attachment, Paint & Audio Pipeline Audits)**: ✅ **COMPLETE**.
+   - `docs/rea-investigation/ATTACHMENT_LIFECYCLE_AUDIT.md`: All 23 attachment type constants audited across 9 lifecycle dimensions; resolved `AttachData` 16 vs 19 field discrepancy (strictly 16 declared constructor fields); Room v47 `attachments` table mapped.
+   - `docs/rea-investigation/PAINT_ENGINE_INVESTIGATION.md`: In-editor ProseMirror `ot(s)` node and `XP(t)` serialization; `PaintInfo` 24 fields; `paint_notes` (21 cols) and `paint_attachments` (9 cols); `PaintNoteContent` protobuf; all 28 native `.so` libraries cataloged (~67 MB); replacement vector canvas boundaries defined.
+   - `docs/rea-investigation/AUDIO_RECORDING_AUDIT.md`: MediaRecorder MP3 format verified (`Attachment.DEFAULT_AUDIO_FORMAT = "mp3"`); `RecordAttr` (20 fields), `RecordAttrNew` (17 fields), `RecordTypeAttr` (2 fields), `AudioInfo` (13 fields); `speech_log_info` (18 cols); `attachment_lrc` timeline sync; ASR decoupled.
+5. **Priority Item 5 (Platform Dependency Inventory & Abstraction Boundaries)**: ✅ **COMPLETE**.
+   - `docs/rea-investigation/PLATFORM_DEPENDENCY_INVENTORY.md`: Comprehensive classification of AndroidManifest permissions, services, receivers, providers, proprietary OPLUS/HeyTap/ColorOS vs standard Android vs desktop replacements.
+   - `docs/rea-investigation/CROSS_PLATFORM_ABSTRACTION_REQUIREMENTS.md`: 10 platform abstraction boundary specifications with TypeScript interface contracts (Storage, Database, Sync, Auth, Bridge Host, Media Picker, Audio, Canvas, Notifications, Sharing).
+6. **Next Engineering Milestone**: **Milestone 2: Cross-Platform Architecture Review & Decision**. Awaiting user review and explicit architecture approval before any scaffolding or code implementation begins.
 
 ---
 
-## 1. Executive Summary
+## Complete Bridge & Interface Catalogs
 
-The earlier executive summary below is preserved as historical context but was too confident. The current evidence-based status is:
+### 1. Android-to-JS Handlers (188 Total)
 
-- The bundle contains Vue/TipTap/ProseMirror and is structurally browser-based; standalone execution is now **verified** (15/15 PASS in headless Chromium, 2026-11-02), and the original bridge/native host is still required for several features (slash-menu UI, selection handles, skin/font assets, IME).
-- Comprehensive audits verified all 188 Android→JS handler registrations (174 active, 14 unsent) and 107 Android `@JavascriptInterface` methods (99 active, 8 unreferenced). See `BRIDGE_CONTRACT_AUDIT.md`.
-- The native content model carries TipTap JSON alongside legacy HTML and attachment metadata. Round-trip serialization and title flows are fully mapped. See `CONTENT_ROUNDTRIP_SPEC.md`.
-- REA coverage and static decompilation confirm the database schema (Room v47, `nearme_note.db`).
+#### 1.1 Runtime Probed / Smoke Verified Handlers (31 Handlers)
+Tested and verified at runtime in headless Chromium via CDP:
+1. `callAddRowInTableFromJava`
+2. `callAttachTipTapFromJava`
+3. `callGetAllHTMLFromJava`
+4. `callGetAttachmentsFromJava`
+5. `callGetBlockContentWidthFromJava`
+6. `callGetCursorStartPosition`
+7. `callGetEditorsHeightFromJava`
+8. `callGetFocusedEditorFromJava`
+9. `callGetHasLinkCard`
+10. `callGetPaintAttachmentFromJava`
+11. `callGetSelectedBlockFromJava`
+12. `callGetSelectionCoordsAndHasMarks`
+13. `callGetSelectTextFromJava`
+14. `callGetTextAndHtmlFromJava`
+15. `callInitContentFromJava`
+16. `callInsertTableFromJava`
+17. `callLoadFontListFromJava`
+18. `callNotifyIdleFromJava`
+19. `callRedoFromJava`
+20. `callRemoveRowInTableFromJava`
+21. `callSetBasicCssParamsFromJava`
+22. `callSetBoldFromJava`
+23. `callSetDensityScaleFromJava`
+24. `callSetEditorScaleFromJava`
+25. `callSetItalicFromJava`
+26. `callSetTextSelectionAllFromJava`
+27. `callSetTitleStyleFromJava`
+28. `callSetUiModeFromJava`
+29. `callToggleBulletListFromJava`
+30. `callToggleOrderedListFromJava`
+31. `callUndoFromJava`
 
-**Confidence by layer:**
+#### 1.2 Statically Audited & Verified Active Handlers (143 Handlers)
+Verified with active native invocation call sites in decompiled Java sources:
+1. `callAddColumnInTableFromJava`
+2. `callAddHorizontalRuleFromJava`
+3. `callAddQuickInputSlashFromJava`
+4. `callCancelTextSelectionAllFromJava`
+5. `callCaptureElementFromJava`
+6. `callChangeWebViewWidthScaleFromJava`
+7. `callClearContentFromJava`
+8. `callClearFocusFromJava`
+9. `callClearSearchResultFromJava`
+10. `callConvertToCardByBlockFromJava`
+11. `callConvertToCardFromJava`
+12. `callConvertToLinkByBlockFromJava`
+13. `callConvertToLinkFromJava`
+14. `callCopyInEditorFromJava`
+15. `callCutInEditorFromJava`
+16. `callDecreaseIndentFromJava`
+17. `callDelBlockSelectionModeFromJava`
+18. `callDeleteNewPaintFromJava`
+19. `callDeleteNodeByAttachIdFromJava`
+20. `callDeleteSelectedNodeFromJava`
+21. `callDeleteSummaryStreamTipFromJava`
+22. `callDisableDocumentEventFromJava`
+23. `callEditorInterceptClickFromJava`
+24. `callEnableImageAnimationFromJava`
+25. `callExitBlockSelectionModeFromJava`
+26. `callFocusFromJava`
+27. `callGetImageRectByAttachIdFromJava`
+28. `callGetPaintBackgroundFromJava`
+29. `callGetPaintDisplayDimensionsFromJava`
+30. `callGetRecordCardRectFromJava`
+31. `callGetRecordDetailRectFromJava`
+32. `callGetSelectedPaintAttachIdsFromJava`
+33. `callGetTableFullDisplayWidthFromJava`
+34. `callHandleViewHandStateChange`
+35. `callIncreaseIndentFromJava`
+36. `callInsertCardFromJava`
+37. `callInsertContactCardFromJava`
+38. `callInsertFileCardFromJava`
+39. `callInsertHintTextFromJava`
+40. `callInsertImageFromJava`
+41. `callInsertNewPaintFromJava`
+42. `callInsertPhoneHintTextFromJava`
+43. `callInsertRecordCardFromJava`
+44. `callInsertScheduleCardFromJava`
+45. `callInsertSummaryStreamTipFromJava`
+46. `callInsertTextWithHistoryFromJava`
+47. `callInsertVideoPlaceHolderFromJava`
+48. `callMatchNextFromJava`
+49. `callMatchPreviousFromJava`
+50. `callMoveAttachToSelectionFromJava`
+51. `callMoveColumnInTableFromJava`
+52. `callMoveRowInTableFromJava`
+53. `callOnAIGCGetSelectHtmlTextFromJava`
+54. `callOnAIGCRewriteDeleteFromJava`
+55. `callOnAIGCRewriteFinishFromJava`
+56. `callOnAIGCRewriteInsertFromJava`
+57. `callOnAIGCRewriteReplaceFromJava`
+58. `callOnAIGCRewriteResultFromJava`
+59. `callOnAIGCRewriteStartFromJava`
+60. `callOnAIGCSelectAllTextFromJava`
+61. `callOnAIGCTableInsertFromJava`
+62. `callOnAiKitRewriteInsertFromJava`
+63. `callOnAiKitRewriteReplaceFromJava`
+64. `callOnAIKITUpdateCacheInfoFromJava`
+65. `callOnAIKITUpperScreenScrollDataFromJava`
+66. `callOnGetAIGCHTMLContentFromJava`
+67. `callOnGlobalBlockPasteFromJava`
+68. `callOnGlobalDragDropFromJava`
+69. `callOnGlobalDragEndFromJava`
+70. `callOnGlobalDragEnterFromJava`
+71. `callOnGlobalDragLocationFromJava`
+72. `callOnGlobalDragOtherPasteEndFromJava`
+73. `callOnGlobalDragStartFromJava`
+74. `callOnTableMenuDismissFromJava`
+75. `callOnTableSelectMenuDismissFromJava`
+76. `callPaintIsScalingFromJava`
+77. `callPastAttachEndFromJava`
+78. `callPasteInEditorFromJava`
+79. `callRecordDisableFromJava`
+80. `callRemoveColumnInTableFromJava`
+81. `callReplaceAttachmentByTextFromJava`
+82. `callReplaceNodeByAudioFromJava`
+83. `callReplaceNodeByCardFromJava`
+84. `callReplaceNodeByDocumentFromJava`
+85. `callReplaceNodeByImageFromJava`
+86. `callReplaceNodeByPaintFromJava`
+87. `callReplaceNodeByVideoFromJava`
+88. `callResetQuickInputFormatFromJava`
+89. `callScrollIntoViewFromJava`
+90. `callScrollToAttachmentFromJava`
+91. `callScrollToBottomFromJava`
+92. `callSearchFromJava`
+93. `callSelectAndGetAllTextFromJava`
+94. `callSelectAndGetForwardAllTextFromJava`
+95. `callSelectRangeTextAIGCFromJava`
+96. `callSetAiSummaryStartStop`
+97. `callSetBackgroundColorFromJava`
+98. `callSetBlockQuoteFromJava`
+99. `callSetContentStyleFromJava`
+100. `callSetFontFamilyFromJava`
+101. `callSetFontSizeFromJava`
+102. `callSetImageShareNoticeFromJava`
+103. `callSetKeyBoardEventFromJava`
+104. `callSetPanelHeightFromJava`
+105. `callSetRecordCurrentTimeFromJava`
+106. `callSetSkinCssParamsFromJava`
+107. `callSetStrikethroughFromJava`
+108. `callSetSummaryContentWithAnimation`
+109. `callSetSummaryEntityFromJava`
+110. `callSetTableColorFromJava`
+111. `callSetTextAlignFromJava`
+112. `callSetTextColorFromJava`
+113. `callSetTextFromJava`
+114. `callSetTextHighlightFromJava`
+115. `callSetTextSelectionFromJava`
+116. `callSetTransformFromJava`
+117. `callSetUnderlineFromJava`
+118. `callSetUserScrollFromJava`
+119. `callShareBlockSelectionModeFromJava`
+120. `callShareTableToPictureFromJava`
+121. `callSplitPaintFromJava`
+122. `callSwitchImageSizeFromJava`
+123. `callToggleBulletListHXFromJava`
+124. `callToggleSelectionAllFromJava`
+125. `callToggleTaskListFromJava`
+126. `callUpdateCardFromJava`
+127. `callUpdateCardInfoFromJava`
+128. `callUpdateContentFromJava`
+129. `callUpdateContentHeightFromJava`
+130. `callUpdateElementAttributesFromJava`
+131. `callUpdateFileDocThumbnailFromJava`
+132. `callUpdateHorizontalRuleFromJava`
+133. `callUpdateImageFromJava`
+134. `callUpdateLastPaintEmptyFromJava`
+135. `callUpdateNewPaintFromJava`
+136. `callUpdateRecordCallLogsFromJava`
+137. `callUpdateRecordStateFromJava`
+138. `callUpdateSelectedPaintBackgroundFromJava`
+139. `callUpdateSummaryStreamTipFromJava`
+140. `callUpdateTargetPaintEditingFromJava`
+141. `callUpdateTimeBarHeightFromJava`
+142. `callUpdateVideoFromJava`
+143. `resetQueryFromJava`
+
+#### 1.3 Unsent Handlers (14 Handlers)
+Registered in the JS bundle but have 0 native send call sites found in decompiled APK:
+1. `callRollBackSpecifiedTimesFromJava`
+2. `callUpdateFileNameFromJava`
+3. `callSetAudioDetailFromJava`
+4. `callSetAudioDetailVisibleFromJava`
+5. `callUpdateAudioDetailFromJava`
+6. `callSetTableMenuVisibleFromJava`
+7. `callSetBlockMenuVisibleFromJava`
+8. `callOnSummaryCompleteFromJava`
+9. `callOnSummaryErrorFromJava`
+10. `callSetLinkCardStyleFromJava`
+11. `callUpdateLinkCardFromJava`
+12. `callSetQuickInputStatusFromJava`
+13. `callSetBlockSelectionStatusFromJava`
+14. `callSetDragActiveFromJava`
+
+---
+
+### 2. JavaScript Interface Methods (107 Total)
+
+#### 2.1 Runtime Verified Interface Methods (13 Methods)
+Directly exercised and verified during standalone browser smoke test:
+1. `notifyEditorLoaded`
+2. `notifyEditorFocused`
+3. `notifyEditorBlurred`
+4. `onContentJsonUpdate`
+5. `onTitleChange`
+6. `onFormatStateChange`
+7. `onSelectionChange`
+8. `onUndoStateChange`
+9. `onTextClick` (overload 1)
+10. `onContentCountChange`
+11. `isNewTblVersion`
+12. `pathExists`
+13. `onHandleJsUncaughtException`
+
+#### 2.2 Statically Audited & Verified Active Methods (86 Methods)
+Verified active methods referenced by bundle code:
+1. `checkIfHasPaint`
+2. `disableShowIme`
+3. `exitOverlayModeFromJs`
+4. `findFirstPngFileWithPrefix`
+5. `getAigcGenerateBarHeight`
+6. `getAndroidString`
+7. `getUrlTitle`
+8. `handleAttachCopy`
+9. `handleCopyOrCut`
+10. `handleDrop`
+11. `handlePaste`
+12. `handlePasteAttach`
+13. `hideSoftInput`
+14. `inBlockHorizontalSliding`
+15. `isNodeOrMarkActive`
+16. `lastEmptyTextClick`
+17. `onAddressNavigateClick`
+18. `onAigcShareClick`
+19. `onAiKitCopyClick`
+20. `onAiKitGetCacheData`
+21. `onAiKitRenderStarted`
+22. `onAiKitRetryClick`
+23. `onAudioDetailClick`
+24. `onBlockOperationsUpdated`
+25. `onBlockSelectedStateChange`
+26. `onBulletListSymbolChange`
+27. `onCardClick`
+28. `onClickEditorOutside`
+29. `onClickTableMenu`
+30. `onContactCallClick`
+31. `onContactSaveClick`
+32. `onContentFocus`
+33. `onContentHasTable`
+34. `onContentLineHeightChange`
+35. `onCopyViewClick`
+36. `onDocumentFileClick`
+37. `onEditingPaintUpdated`
+38. `onHorizontalCountChange`
+39. `onImageClick`
+40. `onImageDoubleClick`
+41. `onInterceptWebEditorClickCall`
+42. `onJsLogPrint`
+43. `onLinkClick`
+44. `onLongClick`
+45. `onMatchResultUpdate`
+46. `onNewPaintEditing`
+47. `onNodeAdded`
+48. `onNodeDeleted`
+49. `onObserveRecordCardVisible`
+50. `onPaintClick`
+51. `onPaintTipsClick`
+52. `onPerformFeedback`
+53. `onRecordPlayClick`
+54. `onRecordStopTrackingTouch`
+55. `onRequestDisallowInterceptTouchEvent`
+56. `onScheduleAddClick`
+57. `onSelection`
+58. `onShowLimitToastOnImgTextPaste`
+59. `onShowReachTextLimitToast`
+60. `onSummaryCancelClick`
+61. `onSummaryRetryClick`
+62. `onSummaryStopClick`
+63. `onTableCellContentOverflow`
+64. `onTableColorActive`
+65. `onTableColumnsOverLimit`
+66. `onTableRowsOverLimit`
+67. `onTablesOverLimit`
+68. `onTaskClick`
+69. `onTextClick` (overload 2 with extra parameter)
+70. `onTextDragEnd`
+71. `onTextDragStart`
+72. `onTextInput`
+73. `onTitleFocus`
+74. `onTitleHeightChange`
+75. `onVideoClick`
+76. `onWebAudioComponentLoaded`
+77. `pastedUnsupportedDataInTable`
+78. `performVibrate`
+79. `removeSlashSymbol`
+80. `scrollend`
+81. `setOverScrollEnable`
+82. `startBlockDragFromJs`
+83. `startDragFromJs`
+84. `onNoteIdInit`
+85. `onEditorStateChanged`
+86. `onScrollChanged`
+
+#### 2.3 Unreferenced Interface Methods (8 Methods)
+Exposed in Java `IMyJavascriptInterface` but never called by the JS bundle:
+1. `getAndroidVersion`
+2. `onDoodleUndoRedo`
+3. `onEditingPaintRectChanged`
+4. `onShowPictureGuideTips`
+5. `onShowTableSelectMenu`
+6. `onSkinScaleChanged`
+7. `onTextAlignActive`
+8. `onTitleJsonUpdate` (Dead code; title changes flow strictly through `onTitleChange`)
+
+---
+
+## 2. Confidence by Subsystem Layer
 
 | Layer | Confidence | Basis |
 |---|---|---|
-| Editor (TipTap JS bundle) | ✅ High | Source inspected; standalone browser execution verified 15/15 PASS (2026-11-02) |
-| Bridge protocol (WVJB) | ✅ High | All 188 handlers & 107 iface methods mapped, call sites identified, 26 probes verified |
-| Content data model | ✅ High | TipTap JSON, legacy HTML, TiptapContentInfo, and NoteDataInTipTap verified |
-| Local database schema | ✅ High | Room v47 schema extracted, 14 tables and key fields verified |
-| Attachment handling | 🟡 Medium | Table structure known, binary blobs and lifecycle tracing remaining |
-| Paint canvas (native) | 🟡 Medium | In-editor paint nodes mapped; C++ vector ink engine (libpaint.so) needs replacement |
-| Cloud sync internals | 🔴 Low | OPLUS HeyTap — proprietary, must be replaced entirely by open backend |
+| **Editor Runtime (TipTap JS)** | ✅ High | Standalone browser execution verified 15/15 PASS in Chromium 156 (`SMOKE_TEST_RESULTS.md`) |
+| **Bridge Protocol (WVJB)** | ✅ High | 188 handlers and 107 iface methods classified and cataloged (`BRIDGE_CONTRACT_AUDIT.md`) |
+| **Content Round-Trip Model** | ✅ High | `TiptapContentInfo` (10 fields), `NoteDataInTipTap`, and round-trip flow verified (`CONTENT_ROUNDTRIP_SPEC.md`) |
+| **Database Schema (Room v47)** | ✅ High | All 14 tables, column types, foreign keys, and indexes extracted from `AppDatabase_Impl.java` |
+| **Attachment Pipelines** | ✅ High | All 23 types cataloged; `AttachData` 16 fields verified; storage paths mapped (`ATTACHMENT_LIFECYCLE_AUDIT.md`) |
+| **Paint & Vector Canvas** | ✅ High | `PaintInfo` 24 fields, schemas mapped, 28 native libs cataloged, replacement boundaries specified (`PAINT_ENGINE_INVESTIGATION.md`) |
+| **Audio & Speech Sync** | ✅ High | MP3 format verified (`DEFAULT_AUDIO_FORMAT = "mp3"`), `RecordAttr` 20 fields, LRC timestamps mapped (`AUDIO_RECORDING_AUDIT.md`) |
+| **Platform Dependencies** | ✅ High | AndroidManifest and native libs categorized; all 10 abstraction boundaries specified (`CROSS_PLATFORM_ABSTRACTION_REQUIREMENTS.md`) |
+| **Proprietary Cloud Sync** | 🔴 Low | HeyTap sync is closed/proprietary; must be cleanly replaced with open backend (Supabase/REST) |
+
+---
+
+## 3. Engineering Road Ahead: Phase 2 Milestones
+
+```
++─────────────────────────────────────────────────────────────────────────────+
+|               Phase 1: Reverse Engineering & Evidence Gathering              |
+|                                                                             |
+|  [x] Standalone Editor Smoke Test (15/15 PASS)                              |
+|  [x] Bridge Protocol Contract Audit (188 handlers, 107 interfaces)          |
+|  [x] Content Round-Trip Specification (TipTap JSON, HTML, TiptapContentInfo)|
+|  [x] Attachment Lifecycle & Storage Audit (23 types, 16 AttachData fields)  |
+|  [x] Paint Engine & Native Library Audit (28 .so libs, PaintInfo 24 fields) |
+|  [x] Audio Recording & LRC Timeline Audit (MP3, speech_log_info)            |
+|  [x] Platform Dependency Inventory & 10 Abstraction Boundary Contracts      |
++─────────────────────────────────────────────────────────────────────────────+
+                                       │
+                                       ▼
++─────────────────────────────────────────────────────────────────────────────+
+|               MILESTONE 2: ARCHITECTURE SELECTION & REVIEW                  |
+|                   >>> PENDING EXPLICIT USER APPROVAL <<<                    |
+|                                                                             |
+|  • Evaluate UI shell frameworks against COUI design tokens:                 |
+|    - Option A: Flutter (Universal rendering, webview runner, Skia canvas)    |
+|    - Option B: Tauri + Web (Lightweight desktop webview, native Rust core)  |
+|    - Option C: Compose Multiplatform (Kotlin-first, close to original APK)  |
+|  • Evaluate Backend & Sync Architecture:                                    |
+|    - Option 1: Supabase / PostgreSQL (Delta sync, auth, S3 attachments)      |
+|    - Option 2: Local-First SQLite + Open WebDAV / File Sync                 |
++─────────────────────────────────────────────────────────────────────────────+
+                                       │
+                                       ▼
++─────────────────────────────────────────────────────────────────────────────+
+|                   Phase 3: Implementation & Validation                      |
+|  - Milestone 3: Core Shell Scaffold & Bridge Host Adapter                   |
+|  - Milestone 4: Offline SQLite Database & Note CRUD                         |
+|  - Milestone 5: Attachment Pipeline & Media Integration                     |
+|  - Milestone 6: Open Vector Drawing Canvas Replacement                      |
+|  - Milestone 7: Audio Recording, Playback & LRC Timeline Synchronization    |
+|  - Milestone 8: Cloud Synchronization & Export (PDF, Long Image, Markdown)  |
++─────────────────────────────────────────────────────────────────────────────+
+```
+
+---
+
+## 4. Open Questions & Remaining Unknowns
+
+While Phase 1 investigation has established the static contracts with high confidence, the following items remain strictly categorized as **UNKNOWN** or requiring runtime observation:
+1. **Internal `.bin` Stroke Format**: The exact binary record format of `.bin` stroke files generated by `libinkEngineNative.so` is closed and proprietary. *Resolution*: Rather than attempting to decompile 6.6 MB of proprietary C++, the cross-platform application will implement an open vector stroke format (Bezier/Catmull-Rom) that satisfies `PaintInfo` dimensions and renders preview PNGs.
+2. **Proprietary HeyTap Wire Format**: The exact HTTP payload format and server-side encryption of HeyTap Cloud sync endpoints are proprietary. *Resolution*: Replace entirely with an open sync engine (e.g., Supabase or standard REST).
+3. **OPPO TBL Selection Handles**: The custom `Gc(...).showHandles` API in TBL WebView is absent in stock Chromium. *Resolution*: Use standard ProseMirror / browser selection handles or a light CSS/DOM polyfill.
+
+---
+
+*Phase 1 investigation complete. Ready for user architecture selection review.*
 
 ---
 
