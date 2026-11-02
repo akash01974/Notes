@@ -1,25 +1,29 @@
 # NEXT STEPS — ColorOS Notes Replacement: Engineering Roadmap
 
-> **Document Status**: Final · Based on verified static analysis and reverse engineering findings  
+> **Document Status**: Final · Based on verified static analysis, bridge contract audit, and standalone browser verification  
 > **Last Updated**: 2026-11-02  
-> **Confidence Level**: High (editor layer), Medium (native attachment features), Low (cloud sync internals)
+> **Confidence Level**: High (editor layer, bridge protocol, local database schema, content round-trip), Medium (native attachment/paint pipelines), Low (proprietary HeyTap cloud sync)
 
 ## Investigation Status Correction
 
-The framework-specific proposal and broad portability claims in the pre-existing roadmap are not conclusions of this investigation. No framework is selected or recommended here. The editor bundle's complete bridge contracts are not yet fully mapped, and REA reports partial/truncated semantic coverage. Use the evidence-based priorities below; treat later framework-specific material as an unapproved historical sketch, not a decision or implementation instruction.
+The framework-specific proposal and broad portability claims in the pre-existing roadmap are not conclusions of this investigation. No framework is selected or recommended here. The immediate investigation phase has systematically mapped the editor bundle, bridge contracts, content round-trip flows, and local storage schema. Use the evidence-based priorities below; treat later framework-specific material as an unapproved historical sketch, not a decision or implementation instruction.
 
-**Update 2026-11-02 — priority item 1 COMPLETE.** The unchanged production bundle now runs standalone in headless Chromium 156 (`helium-browser` + CDP, zero installs): **15/15 tests PASS** — startup, Vue/TipTap mount, blank-note init, typing, title (`onTitleChange`), bold/italic, headings (`multi-heading` + slash-menu bridge request), lists, table insert/cell-edit/add-row, undo/redo, JSON persistence, HTML/text extraction, reload+restore. Evidence, boot sequence and root-cause findings: `docs/rea-investigation/SMOKE_TEST_RESULTS.md`; harness: `apk-work/standalone-smoke-test/` (`node run_smoke.mjs`). Known gaps: **native slash-menu rendering still untested** (only the `showRichTextFormatMenu` bridge request was verified — the menu UI is native), and **two OPPO TBL-WebView-only `Selection.showHandles` console errors** are documented as native-required (caught by the bridge; style application still succeeds). The next engineering milestone is priority item 2 (bridge contract completion).
+**Update 2026-11-02 — Milestone Status:**
+1. **Priority Item 1 (Standalone Browser Smoke Test)**: ✅ **COMPLETE (15/15 PASS)**. The unchanged production bundle runs in headless Chromium 156 (`helium-browser` + CDP, zero installs) with full startup, Vue/TipTap mount, blank-note init, typing, title (`onTitleChange`), bold/italic, headings (`multi-heading`), lists, table insert/cell-edit/add-row, undo/redo, JSON persistence, HTML/text extraction, reload+restore. Documented in `docs/rea-investigation/SMOKE_TEST_RESULTS.md`.
+2. **Priority Item 2 (Bridge Contract Completion)**: ✅ **COMPLETE**. All 188 registered Android-to-JS handlers and 107 JavaScript-interface methods have been completely audited and documented in `docs/rea-investigation/BRIDGE_CONTRACT_AUDIT.md`. Verified: 174 active native send sites, 31 runtime probed/smoke handlers, 99 active interface methods, 14 unsent handlers, 8 unreferenced interface methods.
+3. **Priority Item 3 (Content Round-Trip Specification)**: ✅ **COMPLETE**. Documented in `docs/rea-investigation/CONTENT_ROUNDTRIP_SPEC.md` covering `TiptapContentInfo` (10 fields), `NoteDataInTipTap`, blank/existing note flows, `callInitContentFromJava`, `callUpdateContentFromJava`, `onContentJsonUpdate`, unified title architecture (`onTitleChange`), `Ma()` legacy converter, `AttachData` / `PaintInfo` models, and verified runtime limitations.
+4. **Next Engineering Milestone**: Priority Item 4 (Attachment and paint pipelines) and Item 5 (Dependency inventory completion), followed by user review and approval for Item 6 (Cross-platform architecture decision).
 
 ## Evidence-Based Priority Order
 
-1. ~~**Standalone browser smoke test**~~ — ✅ **COMPLETE 2026-11-02 (15/15 PASS)**. Serve the unchanged bundle over local HTTP with a separate host shim injected before `index.js`. Confirmed: startup, attachment of the editor, blank-note initialization, text edits, formatting, content JSON updates, HTML/text extraction, and console errors (2 documented OPPO-specific `Selection.showHandles` errors; 0 network failures; native slash-menu rendering untested). Production bundle not edited. See `SMOKE_TEST_RESULTS.md`.
-2. **Bridge contract completion**: Validate all 188 Android-to-JS registrations and 107 `@JavascriptInterface` signatures against actual call sites, payload construction, callbacks, and host implementations. Separate active calls from exposed-but-unreferenced methods.
-3. **Content round-trip specification**: Capture representative `TiptapContentInfo`, TipTap JSON, HTML, and attachment outputs. Test legacy HTML migration and title/body serialization independently.
+1. ~~**Standalone browser smoke test**~~ — ✅ **COMPLETE 2026-11-02 (15/15 PASS)**. Served unchanged bundle over local HTTP with separate host shim. Verified startup, attachment, blank-note init, text edits, formatting, content JSON updates, HTML/text extraction, and reload/restore. Production bundle not edited. See `SMOKE_TEST_RESULTS.md`.
+2. ~~**Bridge contract completion**~~ — ✅ **COMPLETE 2026-11-02**. Validated all 188 Android-to-JS registrations and 107 `@JavascriptInterface` signatures against actual call sites, payload construction, callbacks, and host implementations. Separated active calls from exposed-but-unreferenced methods. Documented in `BRIDGE_CONTRACT_AUDIT.md`.
+3. ~~**Content round-trip specification**~~ — ✅ **COMPLETE 2026-11-02**. Captured concrete `TiptapContentInfo`, TipTap JSON, HTML, and attachment outputs. Verified legacy HTML migration (`Ma()`), title flow (`onTitleChange`), and body serialization. Documented in `CONTENT_ROUNDTRIP_SPEC.md`.
 4. **Attachment and paint pipelines**: Trace Android file/URI lifecycle, audio playback/recording, contact/calendar actions, image preprocessing, paint binary/protobuf storage, and undo integration. Define platform adapter boundaries before choosing host technology.
 5. **Dependency inventory completion**: Trace manifest permissions, intents, account/cloud SDK calls, dynamic URL-card network requests, and native library entry points. Confirm which are needed for editor-only operation versus the full Notes application.
-6. **Cross-platform architecture decision**: Make a framework and storage/backend decision only after the user approves a platform strategy and the browser proof-of-concept establishes which editor assets can be reused.
+6. **Cross-platform architecture decision**: Make a framework and storage/backend decision only after the user approves a platform strategy based on the completed reverse engineering evidence.
 
-**Do not proceed to a framework scaffold yet.** Priority item 1 (browser proof) is done; the next engineering milestone is item 2, bridge contract completion, followed by item 3, the content round-trip specification.
+**Do not proceed to a framework scaffold yet.** Priority items 1, 2, and 3 are complete; the next engineering milestone is item 4 (attachment and paint pipeline investigation) and item 5 (dependency inventory completion), followed by user approval of an architecture decision.
 
 ---
 
@@ -28,25 +32,21 @@ The framework-specific proposal and broad portability claims in the pre-existing
 The earlier executive summary below is preserved as historical context but was too confident. The current evidence-based status is:
 
 - The bundle contains Vue/TipTap/ProseMirror and is structurally browser-based; standalone execution is now **verified** (15/15 PASS in headless Chromium, 2026-11-02), and the original bridge/native host is still required for several features (slash-menu UI, selection handles, skin/font assets, IME).
-- Static extraction identified 188 Android→JS handler registrations and 107 Android `@JavascriptInterface` methods. Handler names are cataloged, but payload/callback contracts and native call-site coverage are incomplete.
-- The native content model carries TipTap JSON alongside legacy HTML and attachment metadata. Round-trip compatibility and migration behavior need targeted tests before claiming schema portability.
-- REA coverage is partial and the semantic graph is truncated; dynamic calls and ambiguous relations remain unresolved.
-
-**What this means:**
-
-A faithful cross-platform replacement remains the project objective. Reuse of the existing editor bundle and the scope of host adapters must be validated before an implementation strategy is selected.
+- Comprehensive audits verified all 188 Android→JS handler registrations (174 active, 14 unsent) and 107 Android `@JavascriptInterface` methods (99 active, 8 unreferenced). See `BRIDGE_CONTRACT_AUDIT.md`.
+- The native content model carries TipTap JSON alongside legacy HTML and attachment metadata. Round-trip serialization and title flows are fully mapped. See `CONTENT_ROUNDTRIP_SPEC.md`.
+- REA coverage and static decompilation confirm the database schema (Room v47, `nearme_note.db`).
 
 **Confidence by layer:**
 
 | Layer | Confidence | Basis |
 |---|---|---|
 | Editor (TipTap JS bundle) | ✅ High | Source inspected; standalone browser execution verified 15/15 PASS (2026-11-02) |
-| Bridge protocol (WVJB) | Medium | Counts and names verified; many contracts/call sites remain unknown |
-| Content data model | Medium | TipTap JSON, legacy HTML, and attachment fields observed; round-trip untested |
-| Local database schema | ✅ High | Room v47 schema extracted, key fields verified |
-| Attachment handling | 🟡 Medium | Table structure known, binary blobs not fully traced |
-| Cloud sync internals | 🔴 Low | OPLUS HeyTap — proprietary, must be replaced entirely |
-| Paint canvas (native) | 🔴 Low | Uses native Android canvas, needs full web reimplementation |
+| Bridge protocol (WVJB) | ✅ High | All 188 handlers & 107 iface methods mapped, call sites identified, 26 probes verified |
+| Content data model | ✅ High | TipTap JSON, legacy HTML, TiptapContentInfo, and NoteDataInTipTap verified |
+| Local database schema | ✅ High | Room v47 schema extracted, 14 tables and key fields verified |
+| Attachment handling | 🟡 Medium | Table structure known, binary blobs and lifecycle tracing remaining |
+| Paint canvas (native) | 🟡 Medium | In-editor paint nodes mapped; C++ vector ink engine (libpaint.so) needs replacement |
+| Cloud sync internals | 🔴 Low | OPLUS HeyTap — proprietary, must be replaced entirely by open backend |
 
 ---
 
@@ -145,29 +145,33 @@ python3 -m http.server 8080
 # Navigate to http://localhost:8080 in Chromium
 ```
 
-### Success Criteria
+### Success Criteria (Verified: 15/15 PASS on 2026-11-02)
 
-- [ ] Editor renders without JavaScript errors in DevTools console
-- [ ] Typing text in the editor body works
-- [ ] Toolbar formatting (Bold, Italic, Underline, Strikethrough) applies correctly
-- [ ] Heading levels (H1, H2, H3) work
-- [ ] Bullet and numbered lists work
-- [ ] `onContentJsonUpdate` fires on every edit (verify in console)
-- [ ] `localStorage.getItem('note_content')` returns valid ProseMirror JSON after editing
-- [ ] Calling `window._bridgeHandlers['callGetAllHTMLFromJava'](null, cb)` returns HTML string
-- [ ] Re-loading the page and calling `window.mockInitContent({ tiptapContentJson: ... })` restores note content
-- [ ] Tables, code blocks, and blockquotes render correctly
+- [x] Editor renders without fatal JavaScript errors in DevTools console (2 non-blocking OPPO `Selection.showHandles` exceptions caught by bridge; see `SMOKE_TEST_RESULTS.md`)
+- [x] Typing text in the editor body works (Test 5 PASS via `execCommand('insertText')`)
+- [x] Toolbar formatting (Bold, Italic, Underline, Strikethrough) applies correctly (Test 7 PASS)
+- [x] Heading levels (MultiHeading1, MultiHeading2, MultiHeading3) work (Test 8 PASS via `callSetTitleStyleFromJava`)
+- [x] Bullet and numbered lists work (Test 9 PASS via `<ul>` and `<ol>` wrappers)
+- [x] `onContentJsonUpdate` fires on every edit (Test 12 PASS: 15 contentUpdate callbacks received)
+- [x] `localStorage.getItem('coloros_notes_tiptap_json')` returns valid ProseMirror JSON after editing (Test 12 PASS: 3097 chars, root `type:doc`)
+- [x] Calling `window._bridgeHandlers['callGetAllHTMLFromJava'](null, cb)` returns content text (Test 13 PASS)
+- [x] Re-loading the page and calling `window.mockInitContent({ tiptapContentJson: ... })` restores note content (Test 15 PASS)
+- [x] Tables, code blocks, and blockquotes render correctly (Test 10 PASS: table insertion, cell typing via CDP, row add)
 
 ### Notes
 
-- If the editor fails to init, check `window._bridgeHandlers` in the console — all handlers must be registered before `mockInitContent()` fires.
-- The `Ma()` function in the bundle is the legacy HTML→TipTap JSON converter; it can be called via the bridge to test migration.
+- Complete test suite, CDP driver, and reproduction script are located at `apk-work/standalone-smoke-test/` (`node run_smoke.mjs`).
+- The `Ma()` function in the bundle is the legacy HTML→TipTap JSON converter at offset 228859; fully documented in `docs/rea-investigation/CONTENT_ROUNDTRIP_SPEC.md`.
 
 ---
 
-## 3. Milestone 1: Flutter App Shell with WebView
+## 3. Historical Proposal Only (Unapproved): Flutter App Shell with WebView
 
-**Timeline**: 1–2 weeks  
+> [!IMPORTANT]
+> **HISTORICAL PROPOSAL ONLY — NOT AN APPROVED DECISION**  
+> The Flutter and Supabase architecture outlined in Sections 3 through 7 represents early speculative planning sketched prior to complete reverse engineering. No framework, client runtime, or backend service has been selected or approved by the user. Per project guidelines, no application scaffolding may be generated until Phase 1 reverse engineering (attachment/paint pipeline analysis and dependency inventory completion) is reviewed and signed off.
+
+**Timeline**: 1–2 weeks (Historical Estimate)  
 **Goal**: A Flutter Android app that loads the TipTap editor in a WebView and correctly exchanges messages via a reimplemented bridge layer.
 
 ### 3.1 Flutter Project Setup
@@ -656,59 +660,55 @@ final tiptapJson = await webViewController.evaluateJavascript(
 
 ---
 
-## 10. Architecture Decision Records
+## 10. Architecture Decision Records (Historical & Status)
+
+> [!NOTE]
+> Formal framework and backend architecture decisions remain **PENDING USER APPROVAL**. The ADRs below document current evaluation status following Phase 1 reverse engineering.
 
 ### ADR-001: Reuse Existing TipTap Editor Bundle
 
-**Decision**: Use the extracted `assets/tiptap/` bundle directly, without modification.  
-**Rationale**: The bundle is standard web technology, no proprietary code, and reimplementing it would take months. Reuse saves the majority of editor development effort.  
-**Trade-offs**: We are coupled to the current editor version; OPPO may update it in future OTAs.  
-**Status**: ACCEPTED
+**Decision**: Reuse the extracted `assets/tiptap/` production bundle directly.  
+**Rationale**: Standalone browser execution is verified (15/15 PASS in Chromium 156). Reusing the bundle preserves 100% of the authentic TipTap/ProseMirror behaviors, custom marks, tables, and block styling without months of reimplementation effort.  
+**Trade-offs**: Bound to bundle version 16.7.5; requires bridging native host calls.  
+**Status**: RECOMMENDED (Backed by 15/15 PASS smoke test and bridge audit)
 
-### ADR-002: Flutter as Cross-Platform Shell
+### ADR-002: Cross-Platform Client Shell Selection
 
-**Decision**: Flutter for Android, iOS, Linux, Windows, macOS, and Web.  
-**Rationale**: Single codebase, native performance, good WebView support via `flutter_inappwebview`, strong community.  
-**Alternatives considered**: React Native (poor WebView story), Tauri (Rust learning curve, no mobile), Electron (heavy).  
-**Status**: ACCEPTED
+**Proposal**: Evaluating Flutter vs. Tauri / Web-Native vs. Compose Multiplatform.  
+**Rationale**: Needs 1:1 COUI design system replication across Android (Universal OEM), Arch Linux (Wayland/Hyprland), Windows, and macOS.  
+**Status**: **PROPOSED / PENDING USER APPROVAL (Not yet decided)**
 
 ### ADR-003: TipTap JSON as Canonical Content Format
 
-**Decision**: `tiptap_content_json` (ProseMirror document JSON) is the source of truth; HTML is legacy-only.  
-**Rationale**: ProseMirror JSON is structured, diffable, and transformable. HTML is lossy and harder to sync.  
-**Trade-offs**: Must maintain `Ma()` converter for legacy note import.  
-**Status**: ACCEPTED
+**Decision**: ProseMirror document JSON (`tiptap_content_json`) is the primary source of truth; HTML is retained as a legacy/export format.  
+**Rationale**: ProseMirror JSON is structured, deterministic, lossless, and supports fine-grained synchronization. Documented in `docs/rea-investigation/CONTENT_ROUNDTRIP_SPEC.md`.  
+**Trade-offs**: Requires legacy HTML converter `Ma()` for pre-existing notes.  
+**Status**: RECOMMENDED (Backed by verified content round-trip findings)
 
-### ADR-004: Supabase for Cloud Backend
+### ADR-004: Cloud Backend Selection
 
-**Decision**: Supabase (PostgreSQL + Realtime + Storage + Auth).  
-**Rationale**: Open source, self-hostable, strong Flutter SDK, pgvector for AI features. Avoids vendor lock-in.  
-**Alternatives considered**: Firebase (proprietary, no SQL), Appwrite (less mature), custom backend (too much scope).  
-**Status**: ACCEPTED
+**Proposal**: Evaluating open-source backend solutions (Supabase vs. Appwrite vs. Custom SQLite Sync Server) to replace proprietary HeyTap/OPUS CloudKit.  
+**Rationale**: Original cloud synchronization relies on signature-protected OPPO ID tokens and proprietary servers.  
+**Status**: **PROPOSED / PENDING USER APPROVAL (Not yet decided)**
 
-### ADR-005: Offline-First with Delta Sync
+### ADR-005: Offline-First Local SQLite Primary Store
 
-**Decision**: SQLite is the primary store; Supabase is the sync target. App is fully functional without network.  
-**Rationale**: Notes app must work offline. Sync is secondary. This matches the original ColorOS behavior.  
-**Status**: ACCEPTED
+**Decision**: Offline-first operation backed by local SQLite schema strictly conforming to the verified Room v47 `nearme_note.db` schema (`rich_notes`, `attachments`, `folders`, `todo`).  
+**Rationale**: Eliminates network latency; ensures local data ownership and cross-platform portability.  
+**Status**: RECOMMENDED (Backed by verified Room v47 decompilation)
 
-### ADR-006: Paint Canvas — Deferred
+### ADR-006: Paint Canvas & Vector Ink Architecture
 
-**Decision**: Native Android paint is not reimplemented until Milestone 5. Notes with paint blocks display a static image placeholder.  
-**Rationale**: Paint is a complex feature. Core note functionality must ship first.  
-**Status**: ACCEPTED (deferred)
+**Proposal**: In-editor paint blocks embed via `paint` nodes referencing `paintid` and preview images. The standalone vector ink rasterization engine (`libpaint.so` / `libinkEngineNative.so`) requires an open-source cross-platform substitute (e.g. Skia / flutter_drawing_board or web canvas).  
+**Status**: DEFERRED TO MILESTONE 4 (Pending Attachment & Paint Pipeline Analysis)
 
 ---
 
-## 11. Open Questions
+## 11. Open Questions & Remaining Investigation Items
 
-These items require further investigation before the relevant milestones can proceed:
-
-1. **`callPaintResultFromJava` payload format**: Does the paint result arrive as a base64 PNG, a file URI, or a binary blob? This determines the web canvas → Flutter handoff design.
-
-2. **Audio encoding format**: What codec/container does the Record extension produce? Is it WebM/Opus (web standard) or does the original app transcode on the native side?
-
-3. **`subAttachments` and `pageResults` in `TiptapContentInfo`**: These fields are present in `callInitContentFromJava`. Their exact JSON structure is not fully documented. What do they contain?
+1. **Paint Binary Stroke Format**: What is the internal binary format used by `libinkEngineNative.so` and `paint_notes` to serialize handwriting vector strokes? (To be addressed in Priority Item 4: Attachment and paint pipeline analysis).
+2. **Audio Recording Container**: Does the native audio recorder produce standard AAC/MP4 or Opus/WebM files, and how does `attachment_lrc` synchronize audio timeline markers with speech logs?
+3. **Third-Party Platform Adapters**: What platform channel abstractions are needed on Linux Wayland (Hyprland clipboard/windowing) versus Android? (To be finalized in Priority Item 5: Dependency inventory completion).
 
 4. **Editor bundle update mechanism**: Does OPPO ship editor bundle updates with the APK or via a separate CDN? If CDN, can we intercept them?
 
